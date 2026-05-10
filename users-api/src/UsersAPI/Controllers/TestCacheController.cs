@@ -31,6 +31,6 @@ public class TestCacheController : ControllerBase
   [HttpGet("version")]
   public async Task<IActionResult> Version()
   {
-    return Ok("Versão do deploy: v1");
+    return Ok("Versão do deploy: v2");
   }
 }
