@@ -20,7 +20,7 @@ spec:
       containers:
       - name: users-api
 
-        image: fenixdevs/users-api:v1
+        image: fenixdevs/users-api:latest
 
         imagePullPolicy: Always
 
@@ -59,7 +59,6 @@ spec:
           httpGet:
             path: /health/ready
             port: 8080
-
           initialDelaySeconds: 10
           periodSeconds: 5
 
@@ -67,6 +66,5 @@ spec:
           httpGet:
             path: /health/live
             port: 8080
-
           initialDelaySeconds: 20
           periodSeconds: 10
