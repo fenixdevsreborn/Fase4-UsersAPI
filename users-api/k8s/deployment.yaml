@@ -22,6 +22,8 @@ spec:
 
         image: fenixdevs/users-api:v1
 
+        imagePullPolicy: Always
+
         ports:
         - containerPort: 8080
 
