@@ -4,10 +4,8 @@ on:
   push:
     branches:
       - main
-      - soares/usersapi
 
 jobs:
-
   build-and-deploy:
 
     runs-on: ubuntu-latest
@@ -37,15 +35,16 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
+    - name: Set image tag
+      run: echo "TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
     - name: Build Docker Image
       run: |
-        docker build \
-          -t ${{ secrets.DOCKER_USERNAME }}/users-api:latest \
-          ./users-api
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/users-api:${TAG} .
 
     - name: Push Docker Image
       run: |
-        docker push ${{ secrets.DOCKER_USERNAME }}/users-api:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/users-api:${TAG}
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -60,7 +59,11 @@ jobs:
           --name ${{ secrets.EKS_CLUSTER_NAME }} \
           --region ${{ secrets.AWS_REGION }}
 
-    - name: Deploy to EKS
+    - name: Update deployment image
       run: |
-        kubectl apply -f users-api/k8s/
-        kubectl rollout restart deployment users-api
+        kubectl set image deployment/users-api \
+          users-api=${{ secrets.DOCKER_USERNAME }}/users-api:${TAG}
+
+    - name: Wait rollout
+      run: |
+        kubectl rollout status deployment/users-api
