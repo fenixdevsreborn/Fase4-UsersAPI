@@ -27,4 +27,10 @@ public class TestCacheController : ControllerBase
       value = result
     });
   }
+
+  [HttpGet("version")]
+  public async Task<IActionResult> Version()
+  {
+    return Ok("Versão do deploy: v1");
+  }
 }
