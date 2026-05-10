@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: users-api-config
+
+data:
+  redis-connection: redis-service:6379
