@@ -1,5 +1,7 @@
 ﻿using Amazon.DynamoDBv2;
+using Amazon.SQS;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Messaging;
 using Repositories;
 using Services;
 using UsersAPI.Cache;
@@ -19,9 +21,17 @@ public static class ServiceCollectionExtensions
     services.Configure<AwsConfiguration>(
         configuration.GetSection("AWS"));
 
+    services.AddControllers();
+
+    services.AddHttpContextAccessor();
+
     services.AddScoped<ICacheService, RedisCacheService>();
-    services.AddScoped<UserService>();
+
     services.AddScoped<UserRepository>();
+
+    services.AddScoped<EventPublisher>();
+
+    services.AddScoped<UserService>();
 
     services.AddStackExchangeRedisCache(options =>
     {
@@ -31,6 +41,8 @@ public static class ServiceCollectionExtensions
 
     services.AddAWSService<IAmazonDynamoDB>();
 
+    services.AddAWSService<IAmazonSQS>();
+
     return services;
   }
 
@@ -39,13 +51,17 @@ public static class ServiceCollectionExtensions
       IConfiguration configuration)
   {
     services.AddHealthChecks()
-        .AddCheck("self",
-            () => HealthCheckResult.Healthy())
+
+        .AddCheck(
+            "self",
+            () => HealthCheckResult.Healthy(),
+            tags: new[] { "live" })
 
         .AddRedis(
             configuration["Redis:Connection"]!,
             name: "redis",
-            failureStatus: HealthStatus.Unhealthy);
+            failureStatus: HealthStatus.Unhealthy,
+            tags: new[] { "ready" });
 
     return services;
   }
