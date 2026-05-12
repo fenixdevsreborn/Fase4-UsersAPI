@@ -59,3 +59,5 @@ nunit-*.xml
 # Kubernetes Secrets
 **/secret.yaml
 **/secrets.yaml
+
+*.vs

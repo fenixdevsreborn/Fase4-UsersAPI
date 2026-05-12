@@ -1,5 +1,6 @@
 ﻿using Amazon.DynamoDBv2;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Services;
 using UsersAPI.Cache;
 using UsersAPI.Configurations;
 
@@ -18,6 +19,7 @@ public static class ServiceCollectionExtensions
         configuration.GetSection("AWS"));
 
     services.AddScoped<ICacheService, RedisCacheService>();
+    services.AddScoped<UserService>();
 
     services.AddStackExchangeRedisCache(options =>
     {
