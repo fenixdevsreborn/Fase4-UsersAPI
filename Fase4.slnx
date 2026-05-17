@@ -1,6 +1,0 @@
-<Solution>
-  <Folder Name="/users-api/" />
-  <Folder Name="/users-api/src/">
-    <Project Path="users-api/src/UsersAPI/UsersAPI.csproj" />
-  </Folder>
-</Solution>
