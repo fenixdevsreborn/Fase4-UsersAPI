@@ -1,163 +1,152 @@
-# 👤 Users API - Fase 3 (MVP AWS)
+# Users API - Fase 4
 
-## 📌 Visão Geral
+API .NET 8 para gerenciamento de usuarios, autenticacao JWT e publicacao de eventos do ecossistema Fase 4. A aplicacao roda como Web API containerizada, com suporte a Docker Compose, Kubernetes local e Amazon EKS.
 
-A **Users API** é um microsserviço responsável pelo gerenciamento de usuários dentro do ecossistema da Fase 3, projetado sob uma abordagem **cloud-native e serverless na AWS**.
+## Visao geral
 
-O serviço foi desenvolvido para atuar como **fonte central de identidade e dados de usuários**, garantindo integração consistente com outros serviços da plataforma, como Games, Payments e Notifications.
+A Users API e o servico responsavel por:
 
----
+- Cadastro, consulta, atualizacao e exclusao de usuarios.
+- Login e emissao de tokens JWT.
+- Persistencia em PostgreSQL via Entity Framework Core.
+- Publicacao de eventos em RabbitMQ.
+- Exposicao de health check em `/health`.
+- Documentacao Swagger em ambiente de desenvolvimento.
 
-## 🎯 Objetivo
+## Arquitetura
 
-* Centralizar o gerenciamento de usuários
-* Garantir escalabilidade horizontal automática
-* Fornecer endpoints seguros e performáticos
-* Servir como base para autenticação e autorização em outros serviços
+- .NET 8 Web API executando via Kestrel na porta `8080`.
+- PostgreSQL como banco relacional da API.
+- RabbitMQ como broker de eventos compartilhado entre os microsservicos.
+- JWT Bearer para autenticacao e autorizacao.
+- Dockerfile e Docker Compose para execucao local.
+- Manifests Kubernetes para ambiente local e Amazon EKS.
+- HPA, Ingress e PVC para o deploy em EKS.
+- Terraform para infraestrutura AWS do projeto.
+- GitHub Actions para testes, build e push da imagem Docker.
 
----
+## Configuracoes principais
 
-## 🏗️ Arquitetura
+Variaveis esperadas pela aplicacao:
 
-O projeto adota **Arquitetura Hexagonal (Ports & Adapters)**, promovendo isolamento entre domínio e infraestrutura.
+- `ConnectionStrings__DefaultConnection`
+- `Jwt__Secret`
+- `Jwt__Issuer`
+- `Jwt__Audience`
+- `Jwt__KeyId`
+- `Jwt__ExpirationHours`
+- `RabbitMq__Host`
+- `RabbitMq__Port`
+- `RabbitMq__Username`
+- `RabbitMq__Password`
+- `RabbitMq__VirtualHost`
+- `RabbitMq__ExchangeName`
 
-### 🔹 Organização em Camadas
+Variaveis usadas pelos scripts e Docker Compose:
 
-* **Domain**
+- `POSTGRES_PASSWORD`
+- `USERS_DB_CONNECTION_STRING`
+- `JWT_SECRET`
+- `JWT_ISSUER`
+- `JWT_AUDIENCE`
+- `JWT_KEY_ID`
+- `RABBITMQ_USERNAME`
+- `RABBITMQ_PASSWORD`
+- `RABBITMQ_VHOST`
 
-  * Entidades de usuário
-  * Regras de negócio
-  * Interfaces (contracts)
+## Execucao local com Docker Compose
 
-* **Application**
-
-  * Casos de uso (Use Cases)
-  * Orquestração do domínio
-
-* **Infrastructure**
-
-  * Implementações de repositórios
-  * Integrações com AWS
-
-* **API (EntryPoint)**
-
-  * AWS Lambda handlers
-  * Exposição via API Gateway
-
----
-
-## ☁️ Infraestrutura AWS
-
-A aplicação utiliza serviços gerenciados da AWS para garantir alta disponibilidade e resiliência:
-
-* **AWS Lambda**
-
-  * Execução serverless dos endpoints
-
-* **Amazon API Gateway**
-
-  * Camada de exposição HTTP e roteamento
-
-* **Amazon DynamoDB**
-
-  * Banco NoSQL altamente escalável
-
-* **AWS IAM**
-
-  * Gerenciamento de permissões
-
-* **AWS CloudWatch**
-
-  * Observabilidade (logs e métricas)
-
-➡️ Esse modelo permite escalar automaticamente sem necessidade de gerenciamento de servidores, característica central de arquiteturas serverless.
-
----
-
-## 🔗 Funcionalidades
-
-* 👤 Cadastro de usuários
-* 📄 Consulta por ID
-* 🔍 Busca por critérios (ex: email)
-* ✏️ Atualização de dados
-* ❌ Exclusão de usuários
-
----
-
-## 🔐 Segurança
-
-* Validação de entrada (input validation)
-* Controle de acesso via IAM
-* Possível integração com autenticação baseada em token (ex: JWT ou Cognito)
-
-💡 Serviços como o **Amazon Cognito** são frequentemente utilizados para autenticação e gerenciamento de usuários em arquiteturas AWS ([Documentação AWS][1])
-
----
-
-## 🚀 Stack Tecnológica
-
-* **.NET 8**
-* **C#**
-* **AWS Lambda**
-* **API Gateway**
-* **DynamoDB**
-* **xUnit + Moq**
-
----
-
-## ⚙️ Execução do Projeto
-
-### 🔧 Pré-requisitos
-
-* .NET 8 SDK
-* AWS CLI configurado
-* Conta AWS ativa
-* Amazon Lambda Tools
-
----
-
-### ▶️ Rodando localmente
-
-```bash
-dotnet restore
-dotnet build
-dotnet run
+```powershell
+docker compose up --build
 ```
 
----
+Servicos locais:
 
-### ☁️ Deploy (AWS)
+- Users API: `http://localhost:5000`
+- Swagger: `http://localhost:5000`
+- PostgreSQL: `localhost:5432`
+- RabbitMQ AMQP: `localhost:5672`
+- RabbitMQ Management: `http://localhost:15672`
 
-```bash
-dotnet lambda deploy-serverless
+O Compose sobe PostgreSQL, RabbitMQ e Users API na rede `fiap-ms-network`, usando vhost RabbitMQ `fiap` e exchange `fiap.events`.
+
+## Execucao local com Kubernetes
+
+```powershell
+.\deployLocal.ps1
 ```
 
-Ou utilizando infraestrutura como código:
+Ou manualmente:
 
-```bash
+```powershell
+kubectl apply -f k8s/local
+kubectl rollout status deployment/users-api -n fase4
+```
+
+Para acessar localmente:
+
+```powershell
+kubectl port-forward svc/users-api 8080:80 -n fase4
+```
+
+Depois acesse:
+
+- API/Swagger: `http://localhost:8080`
+- Health check: `http://localhost:8080/health`
+
+## Infraestrutura AWS
+
+```powershell
+.\criarClusterEks.ps1
+```
+
+Ou via Terraform:
+
+```powershell
+cd iac/terraform/aws
+Copy-Item terraform.tfvars.example terraform.tfvars
 terraform init
+terraform plan
 terraform apply
 ```
 
----
+## Deploy no EKS
 
-## 📦 Estrutura do Projeto
-
-```bash
-src/
- ├── Domain/
- ├── Application/
- ├── Infrastructure/
- ├── API/
- └── Shared/
+```powershell
+.\deployEks.ps1
 ```
 
----
+O script conecta no cluster `fase4-users-cluster`, cria/atualiza secrets Kubernetes e aplica os manifests em `k8s/eks`.
 
-## 🔄 Integração com o Ecossistema
+Imagem usada nos manifests:
 
-A Users API atua como serviço base e pode ser consumida por:
+```text
+adinteltidev/fase4-users-api:latest
+```
 
-* 🎮 Games API → associação usuário-jogos
-* 💳 Payments API → dados de cobrança
-* 🔔 Notifications API → envio de notificações
+## CI/CD
+
+Workflow:
+
+- `.github/workflows/docker-build-push.yml`: restaura dependencias, executa testes da solucao `ms-users.sln`, cria a imagem Docker e publica no Docker Hub.
+
+Secrets esperados:
+
+- `DOCKER_HUB_USERNAME`
+- `DOCKER_HUB_TOKEN`
+- `DOCKER_HUB_REPOSITORY`
+
+## Stack
+
+- .NET 8
+- ASP.NET Core Web API
+- Entity Framework Core
+- PostgreSQL
+- RabbitMQ
+- JWT Bearer
+- Swagger
+- Docker
+- Kubernetes
+- Amazon EKS
+- Terraform
+- xUnit
